@@ -34,6 +34,7 @@ local buscarPosicion, salir
     xor dx,dx
     div bx
     sub ax,3
+	;mov ax,1
     xor cx,cx
     mov cx,1
     mov anchoI,40
@@ -213,6 +214,89 @@ endm
 ;=====================================EEEE===========================================================
 
 
+;======================bejecutar=================================================
+ejecutar macro
+local ciclo_bubble,bAsc,bDes,quick,qAsc,qDes,shell,sAsc,sDes,finalizar
+    guardarEnPila
+    limpiarRegistros   
+    ;Evaluar el tipo de orden, dirección del orden y la velocidad 
+    ;Variables tipo_orden,dir_orden,velocidad
+    
+    ;Conseguir velocidad para el delay
+    mov ax,velocidad
+    mov bx,220
+    mul bx
+    mov velocidad_numero,ax
+
+    ;velocidad_numero con la velocidad de delay
+    limpiarRegistros
+
+    mov ax,tipo_orden
+    cmp ax,'1'
+    je ciclo_bubble
+    cmp ax,'2'
+    je ciclo_quick
+    cmp ax,'3'
+    je ciclo_shell
+
+    ciclo_bubble:
+        xor ax,ax
+        mov ax,dir_orden
+        cmp ax,'1'
+        je bDes
+        cmp ax,'2'
+        je bAsc
+        bAsc:
+            esperarEnter    
+            entrarModoVideo 
+            entrarModoDatos
+            pintarlista bubble,listaNumerosIn
+            ;salida en modo datos
+            esperarEnter
+            ord_bubble_asc 
+            esperarEnter
+            salirModoVideo
+            jmp finalizar
+        bDes:
+            esperarEnter    
+            entrarModoVideo 
+            entrarModoDatos
+            pintarlista bubble,listaNumerosIn
+            ;salida en modo datos
+            esperarEnter
+            ord_bubble_des 
+            esperarEnter
+            salirModoVideo
+            jmp finalizar
+    ciclo_quick:
+        xor ax,ax
+        mov ax,dir_orden
+        cmp ax,'1'
+        je qDes
+        cmp ax,'2'
+        je qAsc
+        qAsc:
+            jmp finalizar
+        qDes:
+            jmp finalizar
+    ciclo_shell:
+        xor ax,ax
+        mov ax,dir_orden
+        cmp ax,'1'
+        je sDes
+        cmp ax,'2'
+        je sAsc
+        sAsc:
+            jmp finalizar
+        sDes:
+            jmp finalizar
+
+    finalizar:
+
+    sacarDePila
+endm
+;================================================================================
+
 ;======================bentrarModoVideo==========================================
 entrarModoVideo macro
     push ax
@@ -225,10 +309,10 @@ endm
 ;================================================================================
 
 ;======================bentrarModoDatos==========================================
-entrarModoDatos macro sdatos
+entrarModoDatos macro
     push ax
-    mov ax, @data
-    ;mov ax, sdatos
+    ;mov ax, @data
+    mov ax, sdatos
     mov ds, ax
     pop ax
 endm
@@ -355,6 +439,50 @@ endm
 ;================================================================================
 
 
+;======================bextensionCorrecta========================================
+extensionCorrecta macro ruta,extension,extension_valida
+local ciclo,siguiente,preComparacion,comparar, noEsIgual,esIgual,fin
+    guardarEnPila
+    limpiarRegistros
+    lea si,ruta
+    lea di,extension
+    ciclo:
+        cmp [si],'.'
+        jne siguiente
+        jmp preComparacion
+
+    siguiente:
+        inc si
+        jmp ciclo
+
+
+    preComparacion:
+        inc si
+    comparar:
+        mov al, [si]
+        mov bl, [di]
+        cmp bl,'$'
+        je esIgual       
+        cmp bl,al
+        jne noEsIgual
+        inc si
+        inc di
+        jmp comparar
+    noEsIgual:
+        mov ax,0
+        mov extension_valida, ax
+        jmp fin
+
+    esIgual:
+        mov ax,1
+        mov extension_valida, ax
+        jmp fin
+
+    fin:
+    sacarDePila
+endm
+;================================================================================
+
 
 ;=====================================GGGG===========================================================
 
@@ -409,6 +537,42 @@ local salir,rojo,azul,amarillo,verde,blanco
         jmp salir
 
     salir:
+endm
+;================================================================================
+
+
+;======================bgetNumero================================================
+getNumero macro entrada,salida
+local ciclo, finalizar, fin, agregarMaximo
+    
+	guardarEnPila
+    mov si, offset entrada
+    mov ax,0
+    mov cx,10
+
+    ;Conseguir decimal en formato hex
+    ciclo:
+        mul cx
+        mov bx,ax  
+        xor ax,ax
+        mov al, [si]
+        sub al,48
+        add ax,bx
+        inc si
+        cmp [si],'$'
+        je finalizar
+        jne ciclo
+     
+    finalizar: 
+		mov salida,ax
+        sacarDePila  
+endm
+;================================================================================
+
+;======================btiempoTranscurrido=======================================
+getTiempoTranscurrido macro
+local ciclo, fin
+    ;variables minutos,segundos
 endm
 ;================================================================================
 
@@ -568,6 +732,25 @@ endm
 ;================================================================================
 
 
+;======================blimpiarRuta==============================================
+limpiarRuta macro variable
+local limpiando,fin
+    guardarEnPila
+    limpiarRegistros
+    lea si, variable
+    limpiando:
+        cmp [si],'$'
+        je fin
+        cmp [si],0
+        je fin
+        mov [si], 00h
+        inc si
+        jmp limpiando
+    fin:
+    sacarDePila
+endm
+;================================================================================
+
 
 ;======================blimpiarRegistros=========================================
 limpiarRegistros macro
@@ -653,6 +836,186 @@ limpiarVideo macro
 endm
 ;================================================================================
 
+;=====================================OOOO===========================================================
+
+;======================bord_bubble_asc===========================================
+ord_bubble_asc macro
+local for1,for2,finalizar,aumentarI,aumentarJ,cambiarValores,continuarFor2,comparacionFor2
+guardarEnPila
+limpiarRegistros
+    mov cx,0
+    mov i,0
+    mov j,0
+    ;mov valorTemp,0
+    lea si,listaNumerosOut
+    for1:
+        mov dx,cx
+        inc dx
+        inc dx
+        inc i
+		mov ax,i
+        mov j,ax
+        inc j
+        mov di,si ;Copiar lugar actual del contador i
+        inc di ;Ir al siguiente número de la lista
+        inc di
+		cmp dx,contadorNumeros
+		je finalizar
+        cmp cx,contadorNumeros
+        jb for2
+        jmp finalizar
+
+    for2:
+		mov bx,[di]
+        cmp [si],bx
+        jg cambiarValores
+        continuarFor2:
+			jmp aumentarJ
+		comparacionFor2:
+            cmp dx,contadorNumeros
+            je aumentarI
+			jmp for2
+
+    aumentarI:
+        inc cx
+        inc cx
+        inc si
+        inc si
+        jmp for1
+    aumentarJ:
+        inc dx
+        inc dx
+        inc di
+        inc di
+        inc j
+        jmp comparacionFor2
+
+    cambiarValores:
+		mov ax,[si]
+        ;mov valorTemp, ax
+		mov bx,[di]
+        mov [si],bx
+        mov [di],ax
+		esperarEnter
+		regresarAvideo
+		limpiarVideo
+		entrarModoDatos
+		pintarLista bubble,listaNumerosOut
+		esperarEnter
+		;esperarEnter
+        ;borrarBarra i,contadorNumeros,anchoI,anchoF,sdatos
+		;salida en video
+        ;esperarEnter
+        ;entrarModoDatos sdatos
+        ;repintarBarra [si],i,contadorNumeros,anchoI,anchoF,alturaF,valorMaximo,sdatos
+		;salida en video
+        ;esperarEnter
+        ;entrarModoDatos sdatos
+        ;borrarBarra j,contadorNumeros,anchoI,anchoF,sdatos
+        ;esperarEnter
+        ;entrarModoDatos sdatos
+        ;repintarBarra [di],j,contadorNumeros,anchoI,anchoF,alturaF,valorMaximo,sdatos
+        ;esperarEnter
+        ;entrarModoDatos sdatos
+        jmp continuarFor2
+    finalizar:
+
+
+
+
+sacarDePila
+endm
+;================================================================================
+
+
+;======================bord_bubble_des===========================================
+ord_bubble_des macro
+local for1,for2,finalizar,aumentarI,aumentarJ,cambiarValores,continuarFor2,comparacionFor2
+guardarEnPila
+limpiarRegistros
+    mov cx,0
+    mov i,0
+    mov j,0
+    ;mov valorTemp,0
+    lea si,listaNumerosOut
+    for1:
+        mov dx,cx
+        inc dx
+        inc dx
+        inc i
+		mov ax,i
+        mov j,ax
+        inc j
+        mov di,si ;Copiar lugar actual del contador i
+        inc di ;Ir al siguiente número de la lista
+        inc di
+		cmp dx,contadorNumeros
+		je finalizar
+        cmp cx,contadorNumeros
+        jb for2
+        jmp finalizar
+
+    for2:
+		mov bx,[di]
+        cmp [si],bx
+        jl cambiarValores
+        continuarFor2:
+			jmp aumentarJ
+		comparacionFor2:
+            cmp dx,contadorNumeros
+            je aumentarI
+			jmp for2
+
+    aumentarI:
+        inc cx
+        inc cx
+        inc si
+        inc si
+        jmp for1
+    aumentarJ:
+        inc dx
+        inc dx
+        inc di
+        inc di
+        inc j
+        jmp comparacionFor2
+
+    cambiarValores:
+		mov ax,[si]
+        ;mov valorTemp, ax
+		mov bx,[di]
+        mov [si],bx
+        mov [di],ax
+		esperarEnter
+		regresarAvideo
+		limpiarVideo
+		entrarModoDatos
+		pintarLista bubble,listaNumerosOut
+		esperarEnter
+		;esperarEnter
+        ;borrarBarra i,contadorNumeros,anchoI,anchoF,sdatos
+		;salida en video
+        ;esperarEnter
+        ;entrarModoDatos sdatos
+        ;repintarBarra [si],i,contadorNumeros,anchoI,anchoF,alturaF,valorMaximo,sdatos
+		;salida en video
+        ;esperarEnter
+        ;entrarModoDatos sdatos
+        ;borrarBarra j,contadorNumeros,anchoI,anchoF,sdatos
+        ;esperarEnter
+        ;entrarModoDatos sdatos
+        ;repintarBarra [di],j,contadorNumeros,anchoI,anchoF,alturaF,valorMaximo,sdatos
+        ;esperarEnter
+        ;entrarModoDatos sdatos
+        jmp continuarFor2
+    finalizar:
+sacarDePila
+endm
+;================================================================================
+
+
+
+
 
 
 ;=====================================PPPP===========================================================
@@ -675,7 +1038,7 @@ local pedir, fin_pedir
         inc si
         jmp pedir
     fin_pedir:
-
+    mov [si],0
     pop ax
     pop si
 endm
@@ -706,18 +1069,29 @@ guardarEnPila
             jne ciclo1
     ;entrarModoDatos 0
     ;entrarModoDatos sdatos
+	;salida con video
 sacarDePila
 endm
 ;================================================================================
 
 
-;======================blistaInicial==============================================
-pintarLista macro contadorNumeros,anchoI,anchoF,alturaF,color,valorMaximo,listaNumerosIn,sdatos
+;======================bpintarLista==============================================
+pintarLista macro tipo_ordenamiento,listaApintar
 local ciclo, fin, rojo, azul, verde, blanco, amarillo,continuar
     guardarEnPila
     limpiarRegistros
+	;pintarMarco macro left,right,up,down,color,sdatos
+	pintarMarco 20d,299d,30d,180d,10d,sdatos
+    ;salida en datos
+    posicionarCursor 28,0
+    imprimirVariable orden 
+    imprimirVariable tipo_ordenamiento
+    imprimirVariable tiempo
+    imprimirVariable velocidad_texto
+    imprimirVariable velocidad
+    posicionarCursor 49,0
     ;La posición inical será x=40
-    lea si, listaNumerosIn
+    lea si, listaApintar
 
     xor dx,dx
     mov ax,contadorNumeros
@@ -729,6 +1103,7 @@ local ciclo, fin, rojo, azul, verde, blanco, amarillo,continuar
     xor dx,dx
     div bx
     sub ax,3
+	;mov ax,1
     xor cx,cx
     mov cx,0
     mov anchoI,40
@@ -771,7 +1146,24 @@ local ciclo, fin, rojo, azul, verde, blanco, amarillo,continuar
         continuar:
             ;pintarBarra anchoI,anchoF,alturaF,0ah,sdatos ;Salida con video
             ;pintarBarra anchoI,anchoF,0,sdatos
-            entrarModoDatos sdatos          
+            entrarModoDatos
+
+            push ax
+            push bx
+            mov ax, dx
+            aam
+            add al, 30h
+            add ah, 30h
+            mov bl, al
+            mov bh, ah
+            mov al,bh
+            mov ah,bl
+            mov numtemp[0],ax
+            mov numtemp[2],','
+            imprimirVariable numtemp
+            pop bx
+            pop ax         
+
             add anchoF,3
             mov dx,anchoF
             mov anchoI,dx
@@ -781,36 +1173,45 @@ local ciclo, fin, rojo, azul, verde, blanco, amarillo,continuar
             cmp cx,contadorNumeros
             jb ciclo
         fin:
-    ;regresarAvideo
+		;salida en modo datos
             sacarDePila
 endm
 ;================================================================================
 
 
 ;======================bpintarMarco==============================================
-pintarMarco macro left,right,up,down,color
+pintarMarco macro left,right,up,down,color,sdatos
 local horizontal,vertical
-    push si
-    xor si,si
-    mov si, left
-
+    guardarEnPila
+	limpiarRegistros
+	mov ax, left
+    mov si, ax
+	mov di, up
+	mov cx, down
     horizontal:
-        pintarPixel up,si,color
-        pintarPixel down,si,color
+		regresarAvideo
+        pintarPixel di,si,color
+        pintarPixel cx,si,color
+		entrarModoDatos
         inc si
         cmp si,right 
         jne horizontal
 
-    xor si,si
-    mov si,up
+    limpiarRegistros
+	mov ax,up
+    mov si,ax
+	mov di,right
+	mov cx,left
     vertical:
-        pintarPixel si,right,color
-        pintarPixel si,left,color
+		regresarAvideo
+        pintarPixel si,di,color
+        pintarPixel si,cx,color
+		entrarModoDatos
         inc si
         cmp si,down 
         jne vertical
 
-    pop si
+	sacarDePila
 endm
 ;================================================================================
 
@@ -863,7 +1264,7 @@ local buscarPosicion, salir, alturaYcolor, rojo,azul,amarillo,verde,blanco
     ;Posición más alta es 30
     ;Posición más baja es 179
     guardarEnPila
-    limpiarRegistros
+    ;limpiarRegistros
 
     ;Calcular ancho
         alturaYcolor:
@@ -923,12 +1324,12 @@ endm
 ;================================================================================
 
 ;======================bsalirModoVideo==========================================
-salirModoVideo macro sdatos
+salirModoVideo macro
     push ax
     mov ax, 0003h
     int 10h
-    mov ax, @data
-    ;mov ax, sdatos
+    ;mov ax, @data
+    mov ax, sdatos
     mov ds, ax
     pop ax
 endm

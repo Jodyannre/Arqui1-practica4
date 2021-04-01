@@ -33,7 +33,7 @@ error_escritura db 0dh,0ah, 'Error en la escritura del archivo','$'
 error_abertura db 0dh,0ah, 'Error, no se pudo abrir ese archivo','$'
 archivoCargado db 0dh, 0ah, 'Archivo cargado $'
 msj_errorApertura db 0ah,0dh, 'Hubo un error en la lectura del archivo.', '$'
-prueba db 'hola mundo','$'
+reporteCreado db 'Reporte creado.','$'
 
 tipo_ord_texto db 0dh,0ah,'Ingrese el tipo de ordenamiento','$'
 ord_bubble_texto db 0dh,0ah, '1) Ordenamiento BubbleSort','$'
@@ -91,7 +91,8 @@ dir_orden dw 2 dup('$')
 minutosFin db 0
 segundosFin db 0
 millisFin db 0
-tiempoTotalActual dw 8 dup('$')
+tiempoTotalActual dw '00:00:00:$$'
+tiempoTotalActual_reset dw '00:00:00:$$'
 hora db 0
 minutos db 0   
 segundos db 0
@@ -114,7 +115,7 @@ bubble db 'Bubble  $'
 shell db 'Shell  $'
 orden db 'Or: $'
 tiempo db 'T: $'
-velocidad_texto db 'Vel: $' 
+velocidad_texto db ' Vel: $' 
 
 
 ;Variables utilizadas en los calculos de las barras a pintar
@@ -423,6 +424,7 @@ ASSUME DS:sdatos
                         limpiarVariableNumero tipo_orden,2
                         limpiarVariableNumero velocidad,2
                         limpiarVariableNumero dir_orden,2 
+                        copiarVariable tiempoTotalActual_reset,tiempoTotalActual
                         jmp leer
                 
         numeroTres:
@@ -437,11 +439,21 @@ ASSUME DS:sdatos
                 writeXml
                 cerrarArchivo manejadorSalida
                 ;Limpiar todas las variables
-                mov posicionActualReporte,0
-                mov encabezadosAgregados,0
-                ;limpiarVariableTexto reporte,20000
+                limpiarVariableTexto reporte,20000
                 limpiarVariableNumero listaNumerosIn,26
                 limpiarVariableNumero listaNumerosOut,26
+                limpiarConsola
+                mov anchoI,0
+                mov anchoF,0
+                mov alturaF,0
+                mov valorMaximo,0
+                mov i,0
+                mov j,0
+                mov encabezadosAgregados,0
+                mov posicionActualReporte,0
+                mov contadorNumeros,0
+                imprimirVariable reporteCreado
+                esperarEnter
                 limpiarConsola
                 imprimirArray menuPrincipal 5
                 imprimirVariable ingreso 

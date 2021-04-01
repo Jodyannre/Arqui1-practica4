@@ -159,7 +159,7 @@ endm
 
 
 ;======================bcopiarLista==============================================
-copiarLista macro manejador, fuente,destino,contadorNumeros
+copiarLista macro fuente,destino
 local ciclo,fin
     guardarEnPila
     
@@ -187,6 +187,30 @@ local ciclo,fin
 endm
 ;================================================================================
 
+
+;======================bcopiarVariable===========================================
+copiarVariable macro fuente,destino
+local ciclo,fin
+    guardarEnPila
+    
+    lea si, fuente
+    lea di, destino
+
+    ciclo:
+        cmp [si],'$'
+        je fin
+        mov ax,[si]
+        mov [di],ax
+        inc si
+        inc si
+        inc di
+        inc di
+        jmp ciclo
+
+    fin:
+        sacarDePila
+endm
+;================================================================================
 
 
 ;======================bcrearXml=================================================
@@ -351,11 +375,13 @@ local ciclo_bubble,bAsc,bDes,quick,qAsc,qDes,shell,sAsc,sDes,finalizar
     ;Variables tipo_orden,dir_orden,velocidad
     
     ;Conseguir velocidad para el delay
+    ;esperarEnter
     mov ax,velocidad
-    mov bx,220
+    sub ax,30h
+    mov bx,400
     mul bx
     mov velocidad_numero,ax
-
+    ;esperarEnter
     ;velocidad_numero con la velocidad de delay
     limpiarRegistros
 
@@ -375,6 +401,21 @@ local ciclo_bubble,bAsc,bDes,quick,qAsc,qDes,shell,sAsc,sDes,finalizar
         cmp ax,'2'
         je bDes
         bAsc:
+            ;getHora
+            ;mov al,minutos
+            ;mov minutosini,al
+            ;mov al,segundos
+            ;mov segundosini,al
+            ;mov al,millis
+            ;mov millisIni,al
+            ;xor al,al
+            ;esperarEnter    
+            entrarModoVideo 
+            entrarModoDatos
+            pintarlista bubble,listaNumerosIn
+            ;salida en modo datos
+            ;esperarEnter
+            esperarSpace
             getHora
             mov al,minutos
             mov minutosini,al
@@ -383,19 +424,29 @@ local ciclo_bubble,bAsc,bDes,quick,qAsc,qDes,shell,sAsc,sDes,finalizar
             mov al,millis
             mov millisIni,al
             xor al,al
-            esperarEnter    
-            entrarModoVideo 
-            entrarModoDatos
-            pintarlista bubble,listaNumerosIn
-            ;salida en modo datos
-            esperarEnter
             ord_bubble_asc 
-            esperarEnter
+            ;esperarEnter
+            esperarEsc
             salirModoVideo
             ;escribirEncabezadoParte3 tipoDeDireccion,nombreOrdenamiento_a,nombreOrdenamiento_c
             escribirEncabezadoParte3 tipo_ascendente,Ordenamiento_BubbleSort_a,Ordenamiento_BubbleSort_c
             jmp finalizar
         bDes:
+            ;getHora
+            ;mov al,minutos
+            ;mov minutosini,al
+            ;mov al,segundos
+            ;mov segundosini,al
+            ;mov al,millis
+            ;mov millisIni,al
+            ;xor al,al
+            ;esperarEnter    
+            entrarModoVideo 
+            entrarModoDatos
+            pintarlista bubble,listaNumerosIn
+            ;salida en modo datos
+            ;esperarEnter
+            esperarSpace
             getHora
             mov al,minutos
             mov minutosini,al
@@ -404,14 +455,9 @@ local ciclo_bubble,bAsc,bDes,quick,qAsc,qDes,shell,sAsc,sDes,finalizar
             mov al,millis
             mov millisIni,al
             xor al,al
-            esperarEnter    
-            entrarModoVideo 
-            entrarModoDatos
-            pintarlista bubble,listaNumerosIn
-            ;salida en modo datos
-            esperarEnter
             ord_bubble_des 
-            esperarEnter
+            ;esperarEnter
+            esperarEsc
             salirModoVideo
             escribirEncabezadoParte3 tipo_descendente,Ordenamiento_BubbleSort_a,Ordenamiento_BubbleSort_c
             jmp finalizar
@@ -439,6 +485,9 @@ local ciclo_bubble,bAsc,bDes,quick,qAsc,qDes,shell,sAsc,sDes,finalizar
             jmp finalizar
 
     finalizar:
+        ;Reiniciar lista out
+        limpiarVariableNumero listaNumerosOut 26
+        copiarLista listaNumerosIn,listaNumerosOut
 
     sacarDePila
 endm
@@ -1055,8 +1104,8 @@ local ciclo, finCiclo, getNumero, verificarNumero, probableNumero
     mov di, offset lectura
     ciclo:
         ;Conseguir caracter de entrada, 1 x 1
-        imprimirVariable lectura
-        imprimirVariable saltoLinea
+        ;imprimirVariable lectura
+        ;imprimirVariable saltoLinea
         mov ah, 3Fh
         mov bx, manejador
         mov cx, 1
@@ -1099,7 +1148,7 @@ local ciclo, finCiclo, getNumero, verificarNumero, probableNumero
             jmp ciclo
 
     finCiclo:
-        copiarLista manejador listaNumerosIn,listaNumerosOut,contadorNumeros
+        copiarLista listaNumerosIn,listaNumerosOut
 endm
 ;================================================================================
 
@@ -1284,12 +1333,14 @@ limpiarRegistros
 		mov bx,[di]
         mov [si],bx
         mov [di],ax
-		esperarEnter
-		regresarAvideo
+		;esperarEnter
+		delay velocidad_numero
+        getTiempoTranscurrido
+        regresarAvideo
 		limpiarVideo
 		entrarModoDatos
 		pintarLista bubble,listaNumerosOut
-		esperarEnter
+		;esperarEnter
 		;esperarEnter
         ;borrarBarra i,contadorNumeros,anchoI,anchoF,sdatos
 		;salida en video
@@ -1374,12 +1425,14 @@ limpiarRegistros
 		mov bx,[di]
         mov [si],bx
         mov [di],ax
-		esperarEnter
-		regresarAvideo
+		;esperarEnter
+        delay velocidad_numero
+        getTiempoTranscurrido		
+        regresarAvideo
 		limpiarVideo
 		entrarModoDatos
 		pintarLista bubble,listaNumerosOut
-		esperarEnter
+		;esperarEnter
 		;esperarEnter
         ;borrarBarra i,contadorNumeros,anchoI,anchoF,sdatos
 		;salida en video
@@ -1471,7 +1524,7 @@ local ciclo, fin, rojo, azul, verde, blanco, amarillo,continuar
 	;pintarMarco macro left,right,up,down,color,sdatos
 	pintarMarco 20d,299d,30d,180d,10d,sdatos
     ;salida en datos
-    getTiempoTranscurrido
+    ;getTiempoTranscurrido
     posicionarCursor 28,0
     imprimirVariable orden 
     imprimirVariable tipo_ordenamiento

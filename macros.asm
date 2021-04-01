@@ -188,6 +188,36 @@ endm
 ;================================================================================
 
 
+
+;======================bcrearXml=================================================
+crearXml macro
+    local error, fin
+    lea dx, nombreXml
+    mov cx,0
+    ;Crear el archivo
+    mov ah, 3ch
+    int 21h
+    mov manejadorSalida,ax
+    jc error
+    ;Cerrar el archivo
+    ;mov ah, 3Eh
+    ;mov bx, manejador
+    ;int 21h
+    jmp fin
+    error:
+        ;imprimirArchivo errorCreacion
+        esperarEnter
+        ;Rutina para terminar programa
+        ;mov ax, 4c00h
+        ;int 21h
+    fin:
+endm
+
+;================================================================================
+
+
+
+
 ;=====================================DDDD===========================================================
 
 
@@ -207,6 +237,104 @@ local ret1,ret2,finRet
     jmp ret2
     finRet:
         sacarDePila
+endm
+;================================================================================
+
+
+;======================bgetNumerosGrandes========================================
+getNumerosGrandes macro iteracion
+    local conseguido, fin, dividir  
+    push dx
+    push cx
+    push ax
+    push bx
+    
+    mov bx,10
+    mov cx,1
+
+    dividir:
+        xor dx,dx
+        div bx
+        push dx
+        cmp ax,10
+        jb conseguido
+        jmp dividir
+    conseguido:
+        aam
+        add al,30h 
+        mov [si],al
+        inc si
+        inc cx       
+        cmp cx,iteracion
+        je fin
+        pop dx
+        mov al,dl
+        jne conseguido
+    fin:
+        pop bx
+        pop ax
+        pop cx
+        pop dx
+endm
+
+;================================================================================
+
+
+;======================bgetNumerosPequenos=======================================
+
+getNumerosPequenos macro ultimo
+    local esCero,verificarUltimo, menor,agregarPuntos,fin
+    push ax
+    push bx
+    push cx
+    push dx
+    cmp al,0
+    je esCero
+    cmp al,10
+    jb menor
+    xor dx,dx
+    ;xor bx,bx
+    mov bx,10
+    div bx
+    aam
+    add al,30h 
+    mov [si],al
+    inc si
+    mov al,dl
+    aam
+    add al,30h
+    mov [si],al
+    inc si
+    jmp verificarUltimo
+
+    menor:
+        mov [si],30h
+        inc si    
+        aam
+        add al, 30h    
+        mov [si], al
+        inc si
+        jmp verificarUltimo
+    esCero:
+        mov [si],30h
+        inc si
+        mov [si],30h
+        inc si
+
+    verificarUltimo:
+        mov al, ultimo
+        cmp al,1
+        je fin
+        jne agregarPuntos
+
+    agregarPuntos:
+        mov [si],':'
+        inc si
+    fin:
+        pop dx
+        pop cx
+        pop bx
+        pop ax
 endm
 ;================================================================================
 
@@ -243,10 +371,18 @@ local ciclo_bubble,bAsc,bDes,quick,qAsc,qDes,shell,sAsc,sDes,finalizar
         xor ax,ax
         mov ax,dir_orden
         cmp ax,'1'
-        je bDes
-        cmp ax,'2'
         je bAsc
+        cmp ax,'2'
+        je bDes
         bAsc:
+            getHora
+            mov al,minutos
+            mov minutosini,al
+            mov al,segundos
+            mov segundosini,al
+            mov al,millis
+            mov millisIni,al
+            xor al,al
             esperarEnter    
             entrarModoVideo 
             entrarModoDatos
@@ -256,8 +392,18 @@ local ciclo_bubble,bAsc,bDes,quick,qAsc,qDes,shell,sAsc,sDes,finalizar
             ord_bubble_asc 
             esperarEnter
             salirModoVideo
+            ;escribirEncabezadoParte3 tipoDeDireccion,nombreOrdenamiento_a,nombreOrdenamiento_c
+            escribirEncabezadoParte3 tipo_ascendente,Ordenamiento_BubbleSort_a,Ordenamiento_BubbleSort_c
             jmp finalizar
         bDes:
+            getHora
+            mov al,minutos
+            mov minutosini,al
+            mov al,segundos
+            mov segundosini,al
+            mov al,millis
+            mov millisIni,al
+            xor al,al
             esperarEnter    
             entrarModoVideo 
             entrarModoDatos
@@ -267,6 +413,7 @@ local ciclo_bubble,bAsc,bDes,quick,qAsc,qDes,shell,sAsc,sDes,finalizar
             ord_bubble_des 
             esperarEnter
             salirModoVideo
+            escribirEncabezadoParte3 tipo_descendente,Ordenamiento_BubbleSort_a,Ordenamiento_BubbleSort_c
             jmp finalizar
     ciclo_quick:
         xor ax,ax
@@ -336,11 +483,160 @@ escribirArchivo macro contenido,manejador,error_escritura
 endm
 ;================================================================================
 
+;======================bEscribirEncabezadoParte1=================================
+escribirEncabezadoParte1 macro
+    xmlAgregarEtiqueta Arqui_a	
+    ;Agregando encabezado
+    xmlAgregarEtiqueta Encabezado_a
+    xmlAgregarEtiqueta Universidad_a
+    xmlAgregarEtiqueta linea1
+    xmlAgregarEtiqueta Universidad_c
+    xmlAgregarEtiqueta Facultad_a
+    xmlAgregarEtiqueta linea2
+    xmlAgregarEtiqueta Facultad_c
+    xmlAgregarEtiqueta Escuela_a
+    xmlAgregarEtiqueta linea3
+    xmlAgregarEtiqueta Escuela_c
+    xmlAgregarEtiqueta Curso_a
+    xmlAgregarEtiqueta Nombre_a
+    xmlAgregarEtiqueta linea4
+    xmlAgregarEtiqueta Nombre_c
+    xmlAgregarEtiqueta Seccion_a
+    xmlAgregarEtiqueta linea5
+    xmlAgregarEtiqueta Seccion_c
+    xmlAgregarEtiqueta Curso_c
+    xmlAgregarEtiqueta Ciclo_a
+    xmlAgregarEtiqueta linea6
+    xmlAgregarEtiqueta Ciclo_c
+endm
+;================================================================================
+
+;======================bEscribirEncabezadoParte2=================================
+escribirEncabezadoParte2 macro
+    ;Agregando fecha
+    getFecha
+    xmlAgregarEtiqueta Fecha_a
+    xmlAgregarEtiqueta Dia_a
+    ;Calcular dia
+    xor ax,ax
+    mov al,dia
+    getNumerosPequenos 1
+    xmlAgregarEtiqueta Dia_c
+    xmlAgregarEtiqueta Mes_a
+    ;calcular mes
+    xor ax,ax
+    mov al,mes
+    getNumerosPequenos 1
+    xmlAgregarEtiqueta Mes_c
+    xmlAgregarEtiqueta Ano_a
+    ;calcular ano
+    xor ax,ax
+    mov ax,ano
+    getNumerosGrandes 5
+    xmlAgregarEtiqueta Ano_c	
+    xmlAgregarEtiqueta Fecha_c
+
+    getHora
+    ;Agregando Hora
+    xmlAgregarEtiqueta Hora_a
+    xmlAgregarEtiqueta Hora_a
+    ;calcular hora
+    xor ax,ax
+    mov al,hora
+    getNumerosPequenos 1
+    xmlAgregarEtiqueta Hora_c
+    xmlAgregarEtiqueta Minutos_a
+    ;calcular minutos
+    xor ax,ax
+    mov al,minutos
+    getNumerosPequenos 1
+    xmlAgregarEtiqueta Minutos_c
+    xmlAgregarEtiqueta Segundos_a
+    ;calcular segundos
+    xor ax,ax
+    mov al,segundos
+    getNumerosPequenos 1
+    xmlAgregarEtiqueta Segundos_c
+    xmlAgregarEtiqueta Hora_c
+
+    ;Agregando alumno
+    xmlAgregarEtiqueta Alumno_a
+    xmlAgregarEtiqueta Nombre_a
+    xmlAgregarEtiqueta linea7
+    xmlAgregarEtiqueta Nombre_c
+    xmlAgregarEtiqueta Carnet_a
+    xmlAgregarEtiqueta linea8
+    xmlAgregarEtiqueta Carnet_c
+    xmlAgregarEtiqueta Alumno_c
+            
+    ;Finaliza encabezado
+    xmlAgregarEtiqueta Encabezado_c
+    xmlAgregarEtiqueta Resultados_a
+endm
+;================================================================================
 
 
+;======================bEscribirEncabezadoParte3=================================
+escribirEncabezadoParte3 macro tipoDeDireccion,nombreOrdenamiento_a,nombreOrdenamiento_c
+local encabezadoYaAgregado
+            ;Agregar resultados al xml
+            guardarEnPila
+            limpiarRegistros
+            mov si,posicionActualReporte
+            mov bl,encabezadosAgregados
+            cmp bl,1
+            je encabezadoYaAgregado
+                xmlAgregarEtiqueta Tipo_a
+                xmlAgregarEtiqueta tipoDeDireccion
+                xmlAgregarEtiqueta Tipo_c
+                xmlAgregarEtiqueta Lista_Entrada_a
+                ;agregar lista inicial
+                mov posicionActualReporte,si
+                xmlAgregarLista listaNumerosIn
+                mov si,posicionActualReporte
+                xmlAgregarEtiqueta Lista_Entrada_c
+                xmlAgregarEtiqueta Lista_Ordenada_a
+                ;agregar lista ordenada
+                mov posicionActualReporte,si
+                xmlAgregarLista listaNumerosOut
+                mov si,posicionActualReporte
+                xmlAgregarEtiqueta Lista_Ordenada_c
+
+            encabezadoYaAgregado:
+                xmlAgregarEtiqueta nombreOrdenamiento_a
+                xmlAgregarEtiqueta Velocidad_a
+                ;Agregar el valor de la velocidad
+                xmlAgregarEtiqueta velocidad
+                xmlAgregarEtiqueta Velocidad_c
+                xmlAgregarEtiqueta Tiempo_a
+                xmlAgregarEtiqueta Minutos_a
+                ;calcular minutos
+                xor ax,ax
+                mov al,minutosFin
+                getNumerosPequenos 1
+                xmlAgregarEtiqueta Minutos_c
+                xmlAgregarEtiqueta Segundos_a
+                ;calcular segundos
+                xor ax,ax
+                mov al,segundosFin
+                getNumerosPequenos 1
+                xmlAgregarEtiqueta Segundos_c
+                xmlAgregarEtiqueta Milisegundos_a
+                ;calcular millis
+                xor ax,ax
+                mov al,millisFin
+                getNumerosPequenos 1
+                xmlAgregarEtiqueta Milisegundos_c
+                xmlAgregarEtiqueta Tiempo_c
+                xmlAgregarEtiqueta nombreOrdenamiento_c
+                mov posicionActualReporte,si
+                sacarDePila
+endm
+
+;================================================================================
 
 ;======================bescribirFin==============================================
-escribirFin macro eof,manejador
+escribirFin macro manejador,eof
     push ax
     push bx
     push cx
@@ -506,73 +802,165 @@ local ciclo, fin
 endm
 ;================================================================================
 
-;======================bgetColor============================================
-getColor macro numero,color
-local salir,rojo,azul,amarillo,verde,blanco
-    cmp numero,20d
-    jbe rojo
-    cmp numero,40d
-    jbe azul
-    cmp numero,60d
-    jbe amarillo
-    cmp numero,80d
-    jbe verde
-    cmp numero,99d
-    jbe blanco
-
-    rojo:
-        mov dx, 0ch
-        jmp salir
-    azul:
-        mov dx, 09h
-        jmp salir
-    amarillo:
-        mov dx, 0eh
-        jmp salir
-    verde:
-        mov dx, 0ah
-        jmp salir
-    blanco:
-        mov dx, 0fh
-        jmp salir
-
-    salir:
+;======================bgetFecha=================================================
+getFecha macro
+    guardarEnPila
+    limpiarRegistros
+    mov ah, 2ah
+    int 21h
+    ;Aqui se consigue la hora y los registros quedan así:
+    ;CX = año
+    ;DH = mes
+    ;DL = dia
+    ;Mando un número para decirle que es el último
+    mov bx,cx
+    mov ano, bx
+    mov mes, dh
+    mov dia, dl
+    sacarDePila
 endm
 ;================================================================================
 
 
-;======================bgetNumero================================================
-getNumero macro entrada,salida
-local ciclo, finalizar, fin, agregarMaximo
-    
-	guardarEnPila
-    mov si, offset entrada
-    mov ax,0
-    mov cx,10
-
-    ;Conseguir decimal en formato hex
-    ciclo:
-        mul cx
-        mov bx,ax  
-        xor ax,ax
-        mov al, [si]
-        sub al,48
-        add ax,bx
-        inc si
-        cmp [si],'$'
-        je finalizar
-        jne ciclo
-     
-    finalizar: 
-		mov salida,ax
-        sacarDePila  
+;======================bgetHora==================================================
+getHora macro
+    guardarEnPila
+    limpiarRegistros
+    mov ah, 2ch
+    int 21h
+    ;Aqui se consigue la hora y los registros quedan así:
+    ;Ch = hora
+    ;Cl = minuto
+    ;Dh = segundo
+    ;DL = Centisegundos 1/100
+    ;Mando un número para decirle que es el último
+    mov hora,ch
+    mov minutos,cl
+    mov segundos,dh
+    mov millis,dl
+    sacarDePila
 endm
 ;================================================================================
 
-;======================btiempoTranscurrido=======================================
+
+;======================bgetTiempoTranscurrido=======================================
 getTiempoTranscurrido macro
-local ciclo, fin
-    ;variables minutos,segundos
+local cicloMillis,contarMillis,sumarUnSegundo,preCicloSegundos,preCicloSegundos2,cicloSegundos,contarSegundos,sumarUnMinuto,preCicloMinutos,preCicloMinutos2,cicloMinutos,contarMinutos,llenarVariable,millisMayorA99,fin
+guardarEnPila
+limpiarRegistros
+    ;variables minutos,segundos -> tiempoTotalActual
+    ;Guardar Tiempo anterior
+    mov ch,minutosIni
+    mov cl,segundosIni
+    mov bl,millisIni
+    getHora
+    mov dl,0 ;Contador para siguientes
+    mov dh,0 ;Contador de tiempo transcurrido
+    ;Guardar tiempo actual
+
+    cicloMillis:
+        cmp bl,millis
+        je preCicloSegundos
+        jmp contarMillis    
+
+    contarMillis:
+        inc bl
+        inc dh
+        cmp bl,100
+        jne cicloMillis
+        je sumarUnSegundo
+
+    sumarUnSegundo:
+        inc dl ;Sumar un segundo
+        mov bl,0 ;Reinicar millis
+        jmp cicloMillis
+        
+    preCicloSegundos:
+        mov bl,dh
+        mov dh,0
+        add cl,dl
+        mov dl,0
+        cmp cl,60
+        jge preCicloSegundos2
+        jmp cicloSegundos
+
+    preCicloSegundos2:
+        sub cl,60 ;Reiniciar segundos
+        mov dl,1 ;Sumar un minuto
+
+
+    cicloSegundos:
+        cmp cl,segundos
+        je preCicloMinutos
+        jmp contarSegundos
+    
+    contarSegundos:
+        inc cl
+        inc dh
+        cmp cl,60
+        jne cicloSegundos
+        je sumarUnMinuto
+
+    sumarUnMinuto:
+        inc dl
+        mov cl,0
+        jmp cicloSegundos
+
+    preCicloMinutos:
+        mov cl,dh
+        mov dh,0
+        add ch,dl
+        mov dl,0
+        cmp ch,60
+        jge preCicloMinutos2  
+        jmp cicloMinutos      
+
+    preCicloMinutos2:
+        sub ch,60 ;Reiniciar segundos
+        mov dl,1 ;Sumar un minuto  
+
+
+
+    cicloMinutos:
+        cmp ch,minutos
+        je llenarVariable
+        jmp contarMinutos  
+
+    contarMinutos:
+        inc ch
+        inc dh
+        cmp ch,60
+        jne cicloMinutos             
+
+    ;ch minutos
+    ;cl segundos
+    ;bl millis
+    ;retornar valores a variables
+    
+    
+    
+    llenarVariable:
+        mov ch,dh
+        lea si,tiempoTotalActual
+        xor ax,ax
+        mov minutosFin,ch
+        mov al,ch
+        getNumerosPequenos 0
+        xor ax,ax
+        mov segundosFin,cl
+        mov al,cl
+        getNumerosPequenos 0
+        xor ax,ax
+        mov millisFin,bl
+        mov al,bl
+        cmp al,99
+        jg millisMayorA99
+        getNumerosPequenos 0
+        jmp fin
+    millisMayorA99:
+        getNumerosGrandes 4
+    fin:
+sacarDePila
 endm
 ;================================================================================
 
@@ -1083,10 +1471,12 @@ local ciclo, fin, rojo, azul, verde, blanco, amarillo,continuar
 	;pintarMarco macro left,right,up,down,color,sdatos
 	pintarMarco 20d,299d,30d,180d,10d,sdatos
     ;salida en datos
+    getTiempoTranscurrido
     posicionarCursor 28,0
     imprimirVariable orden 
     imprimirVariable tipo_ordenamiento
     imprimirVariable tiempo
+    imprimirVariable tiempoTotalActual
     imprimirVariable velocidad_texto
     imprimirVariable velocidad
     posicionarCursor 49,0
@@ -1148,21 +1538,22 @@ local ciclo, fin, rojo, azul, verde, blanco, amarillo,continuar
             ;pintarBarra anchoI,anchoF,0,sdatos
             entrarModoDatos
 
-            push ax
-            push bx
-            mov ax, dx
-            aam
-            add al, 30h
-            add ah, 30h
-            mov bl, al
-            mov bh, ah
-            mov al,bh
-            mov ah,bl
-            mov numtemp[0],ax
-            mov numtemp[2],','
-            imprimirVariable numtemp
-            pop bx
-            pop ax         
+            ;Imprimir numeros solo funciona hasta 8 numeros
+            ;push ax
+            ;push bx
+            ;mov ax, dx
+            ;aam
+            ;add al, 30h
+            ;add ah, 30h
+            ;mov bl, al
+            ;mov bh, ah
+            ;mov al,bh
+            ;mov ah,bl
+            ;mov numtemp[0],ax
+            ;mov numtemp[2],','
+            ;imprimirVariable numtemp
+            ;pop bx
+            ;pop ax         
 
             add anchoF,3
             mov dx,anchoF
@@ -1334,4 +1725,74 @@ salirModoVideo macro
     pop ax
 endm
 ;================================================================================
+
+;=====================================WWWW===========================================================
+
+;======================bwriteXml=================================================
+writeXml macro
+    mov ah,40h
+    mov bx,manejadorSalida
+    getArraySize reporte
+    lea dx,reporte
+    int 21h    
+    ;cerrarArchivo manejador
+endm
+;================================================================================
+
+
+
+;=====================================XXXX===========================================================
+
+;======================bxmlAgregarLista==========================================
+xmlAgregarLista macro dato
+local while,fin,while2,siguienteLista
+guardarEnPila
+limpiarRegistros
+mov si,posicionActualReporte
+lea di,dato
+mov ax,[di]
+    while:    
+        cmp ax,0
+        je fin
+        getNumerosPequenos 1
+        inc di
+        inc di
+        mov ax,[di]
+        cmp ax,0
+        je fin
+        mov [si],','
+        inc si
+        jmp while   
+    fin:
+        mov posicionActualReporte,si
+        sacarDePila
+endm
+;================================================================================
+
+
+;======================bxmlAgregarEtiqueta=======================================
+xmlAgregarEtiqueta macro etiqueta
+local while,fin
+push di
+push ax
+xor ax,ax
+xor di,di
+    lea di,etiqueta
+    while:
+        cmp [di],'$'
+        je fin
+        mov al, [di]
+        mov [si],al
+        inc si
+        inc di
+        jmp while
+    fin:
+pop ax
+pop di
+endm
+
+;================================================================================
+
+
+
 

@@ -142,6 +142,13 @@ i dw 0
 j dw 0
 valorTemp dw 0
 
+;para ordenamiento shell
+i_shell dw 0
+j_shell dw 0  
+gap_shell dw 0
+temp_shell dw 0
+n_shell dw 0
+
 ;variables para xml
 encabezadosAgregados db 0
 posicionActualReporte dw 0

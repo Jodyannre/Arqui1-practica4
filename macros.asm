@@ -464,9 +464,9 @@ local ciclo_bubble,bAsc,bDes,quick,qAsc,qDes,shell,sAsc,sDes,finalizar
     ciclo_quick:
         xor ax,ax
         mov ax,dir_orden
-        cmp ax,'1'
-        je qDes
         cmp ax,'2'
+        je qDes
+        cmp ax,'1'
         je qAsc
         qAsc:
             jmp finalizar
@@ -475,13 +475,45 @@ local ciclo_bubble,bAsc,bDes,quick,qAsc,qDes,shell,sAsc,sDes,finalizar
     ciclo_shell:
         xor ax,ax
         mov ax,dir_orden
-        cmp ax,'1'
-        je sDes
         cmp ax,'2'
+        je sDes
+        cmp ax,'1'
         je sAsc
         sAsc:
+            entrarModoVideo 
+            entrarModoDatos
+            pintarlista shell,listaNumerosIn
+            esperarSpace
+            getHora
+            mov al,minutos
+            mov minutosini,al
+            mov al,segundos
+            mov segundosini,al
+            mov al,millis
+            mov millisIni,al
+            xor al,al
+            ord_shell_asc
+            esperarEsc
+            salirModoVideo
+            escribirEncabezadoParte3 tipo_ascendente,Ordenamiento_Shellsort_a,Ordenamiento_Shellsort_c
             jmp finalizar
         sDes:
+        entrarModoVideo 
+            entrarModoDatos
+            pintarlista shell,listaNumerosIn
+            esperarSpace
+            getHora
+            mov al,minutos
+            mov minutosini,al
+            mov al,segundos
+            mov segundosini,al
+            mov al,millis
+            mov millisIni,al
+            xor al,al
+            ord_shell_des
+            esperarEsc
+            salirModoVideo
+            escribirEncabezadoParte3 tipo_descendente,Ordenamiento_Shellsort_a,Ordenamiento_Shellsort_c
             jmp finalizar
 
     finalizar:
@@ -891,6 +923,26 @@ getHora macro
 endm
 ;================================================================================
 
+;======================bgetPosicionNumero========================================
+getPosicionNumero macro numNum
+local ciclo, fin
+    push si 
+	push cx
+	mov cx,0
+	mov di,0
+	ciclo:
+		cmp numNum,cx
+		je fin
+		inc di
+		inc di
+		inc cx
+		jmp ciclo
+	fin:
+		pop cx
+		pop si
+
+endm
+;================================================================================
 
 ;======================bgetTiempoTranscurrido=======================================
 getTiempoTranscurrido macro
@@ -1454,9 +1506,228 @@ sacarDePila
 endm
 ;================================================================================
 
+;======================bord_shell_asc============================================
+ord_shell_asc macro
+local fin,contarFor3,contarFor2,contarFor1,for3,validar1For3,validar2For3,datosFor3,for2,validarFor2,datosFor2,validarFor1
+    guardarEnPila
+    limpiarRegistros
+	mov ax,contadorNumeros
+	mov bx,2
+	div bx
+	mov n_shell,ax ; n = arr.length
+	xor dx,dx
+	div bx ; n/2
+	;mov dx,cx
+	mov gap_shell,ax ;Gap = n/2	
+
+	validarFor1:
+		cmp gap_shell,0 ;gap > 0
+		jg datosFor2
+		jmp fin
+
+	datosFor2:
+		mov ax,gap_shell ; i = gap
+		mov i_shell,ax
+
+	validarFor2:	
+		mov ax,n_shell
+		cmp i_shell,ax ; i < n
+		jb for2
+		jmp contarFor1
+
+	for2:
+		mov si,i_shell
+		getPosicionNumero si
+		mov ax,listaNumerosOut[di] ;ax -> arr[i]
+		mov temp_shell,ax ; temp = arr[i]
+
+	datosFor3:
+		mov ax,i_shell
+		mov j_shell,ax ; j = i
+
+	validar1For3:
+		mov ax,gap_shell
+		cmp j_shell,ax   ; j >= gap
+		jge validar2For3
+		jmp contarFor2
+
+	validar2For3:
+		mov ax,j_shell
+		mov bx,gap_shell
+		sub ax,bx  ; j-gap
+		getPosicionNumero ax ;Encontrar posicion de j-gap con Di
+		mov cx,ax ; cx -> j-gap
+		mov bx,listaNumerosOut[di] ;bx -> array[j - gap]
+		mov ax,temp_shell
+		cmp bx,ax   ; arr[j - gap] > temp
+		jg for3
+		jmp contarFor2
+
+	for3:
+		mov si,j_shell
+		getPosicionNumero si
+		mov dx,di ; dx -> j posicion lista para el arr
+		mov si,cx ; si -> j-gap
+		getPosicionNumero si ; si es j-gap
+		mov ax,listaNumerosOut[di] ;ax -> arr[j - gap]
+		mov si,dx ; si -> j
+		mov listaNumerosOut[si],ax ;arr[j] = arr[j - gap]
+        ;Aqui se pintan las barras------
+        delay velocidad_numero
+        getTiempoTranscurrido
+        regresarAvideo
+		limpiarVideo
+		entrarModoDatos
+		pintarLista bubble,listaNumerosOut
+        ;-------------------------------
+		jmp contarFor3
+
+	contarFor1:
+		mov bx,2
+		mov ax,gap_shell
+		xor dx,dx
+		div bx
+		mov gap_shell,ax ; Gap /= 2
+		jmp validarFor1
+
+	contarFor2:
+		mov si,j_shell
+		getPosicionNumero si
+		mov ax,temp_shell
+		mov listaNumerosOut[di],ax   ; arr[j] = temp
+        ;Aqui se pintan las barras------
+        ;delay velocidad_numero
+        ;getTiempoTranscurrido
+        ;regresarAvideo
+		;limpiarVideo
+		;entrarModoDatos
+		;pintarLista bubble,listaNumerosOut
+        ;-------------------------------
+		inc i_shell  ; i += 1
+		jmp validarFor2
+		
+	contarFor3:
+		mov ax,gap_shell
+		sub j_shell,ax ;j-=gap
+		jmp validar1For3
+
+	fin:
+
+    sacarDePila
+endm
+;================================================================================
 
 
+;======================bord_shell_des============================================
+ord_shell_des macro
+local fin,contarFor3,contarFor2,contarFor1,for3,validar1For3,validar2For3,datosFor3,for2,validarFor2,datosFor2,validarFor1
+    guardarEnPila
+    limpiarRegistros
+	mov ax,contadorNumeros
+	mov bx,2
+	div bx
+	mov n_shell,ax ; n = arr.length
+	xor dx,dx
+	div bx ; n/2
+	;mov dx,cx
+	mov gap_shell,ax ;Gap = n/2	
 
+	validarFor1:
+		cmp gap_shell,0 ;gap > 0
+		jg datosFor2
+		jmp fin
+
+	datosFor2:
+		mov ax,gap_shell ; i = gap
+		mov i_shell,ax
+
+	validarFor2:	
+		mov ax,n_shell
+		cmp i_shell,ax ; i < n
+		jb for2
+		jmp contarFor1
+
+	for2:
+		mov si,i_shell
+		getPosicionNumero si
+		mov ax,listaNumerosOut[di] ;ax -> arr[i]
+		mov temp_shell,ax ; temp = arr[i]
+
+	datosFor3:
+		mov ax,i_shell
+		mov j_shell,ax ; j = i
+
+	validar1For3:
+		mov ax,gap_shell
+		cmp j_shell,ax   ; j >= gap
+		jge validar2For3
+		jmp contarFor2
+
+	validar2For3:
+		mov ax,j_shell
+		mov bx,gap_shell
+		sub ax,bx  ; j-gap
+		getPosicionNumero ax ;Encontrar posicion de j-gap con Di
+		mov cx,ax ; cx -> j-gap
+		mov bx,listaNumerosOut[di] ;bx -> array[j - gap]
+		mov ax,temp_shell
+		cmp bx,ax   ; arr[j - gap] > temp
+		jl for3
+		jmp contarFor2
+
+	for3:
+		mov si,j_shell
+		getPosicionNumero si
+		mov dx,di ; dx -> j posicion lista para el arr
+		mov si,cx ; si -> j-gap
+		getPosicionNumero si ; si es j-gap
+		mov ax,listaNumerosOut[di] ;ax -> arr[j - gap]
+		mov si,dx ; si -> j
+		mov listaNumerosOut[si],ax ;arr[j] = arr[j - gap]
+        ;Aqui se pintan las barras------
+        delay velocidad_numero
+        getTiempoTranscurrido
+        regresarAvideo
+		limpiarVideo
+		entrarModoDatos
+		pintarLista bubble,listaNumerosOut
+        ;-------------------------------
+		jmp contarFor3
+
+	contarFor1:
+		mov bx,2
+		mov ax,gap_shell
+		xor dx,dx
+		div bx
+		mov gap_shell,ax ; Gap /= 2
+		jmp validarFor1
+
+	contarFor2:
+		mov si,j_shell
+		getPosicionNumero si
+		mov ax,temp_shell
+		mov listaNumerosOut[di],ax   ; arr[j] = temp
+        ;Aqui se pintan las barras------
+        ;delay velocidad_numero
+        ;getTiempoTranscurrido
+        ;regresarAvideo
+		;limpiarVideo
+		;entrarModoDatos
+		;pintarLista bubble,listaNumerosOut
+        ;-------------------------------
+		inc i_shell  ; i += 1
+		jmp validarFor2
+		
+	contarFor3:
+		mov ax,gap_shell
+		sub j_shell,ax ;j-=gap
+		jmp validar1For3
+
+	fin:
+
+    sacarDePila
+endm
+;================================================================================
 
 
 ;=====================================PPPP===========================================================
